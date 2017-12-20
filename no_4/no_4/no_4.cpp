@@ -53,25 +53,38 @@ struct Npc {
 	bool dead = false;
 };
 
-
-bool CheckLine(const Point& from, const Point& to, const Point& circlePt, float radius)
+float Dot(Point p1, Point p2)
 {
-	float m, a, b, c, d;
-	
-	m = (to.y - from.y) / (to.x - from.x);
-	a = m;
-	b = -1;
-	c = -m * from.x + from.y;
-	d = sqrt((a * circlePt.x + b * circlePt.y + c) * (a * circlePt.x + b * circlePt.y + c) / (a * a) + (b * b));
+    return p1.x * p2.x + p1.y * p2.y;
+}
 
-	if (d < radius)
-		return true;
-	else if (d == radius)
-		return true;
-	else if (d > radius)
-		return false;
+int CheckLine(const Point& from, const Point& dir, const Point& circlePt, float radius)
+{
+	float a, b, c, d;
 
-	return false;
+    Point end = Point(from.x + dir.x, from.y + dir.y);
+    Point b1 = Point(from.x - circlePt.x, from.y - circlePt.y);
+
+    a = Dot(dir, dir);
+    b = Dot(dir, b1) * 2.0f;
+    c = Dot(b1, b1) - (radius * radius);
+    d = (b*b) - (4 * a * c);
+
+    int result = 0;
+    if (d >= 0.0f)
+    {
+        float lamba0 = (-b - sqrt(d)) / (2.0f * a);
+        if (lamba0 > 0.0f) {
+            result = 1;
+        }
+
+        float lamba1 = (-b + sqrt(d)) / (2.0f * a);
+        if (lamba1 > 0.0f) {
+            result = 2;
+        }
+    }
+
+	return result;
 }
 
 int main()
@@ -139,7 +152,7 @@ int main()
 		int from;
 		int to;
 		cin >> from;
-		cin >> to;		
+		cin >> to;
 		shootHistory.push_back({ from, to});
 	}
 	*/
@@ -152,7 +165,7 @@ int main()
 	shootHistory.push_back({ 11,4 });
 	shootHistory.push_back({ 13,6 });
 	shootHistory.push_back({ 21,9 });
-	
+
 	//shootHistory.push_back({ 0, 2});
 
 	for (const auto& elem : shootHistory)
@@ -166,7 +179,7 @@ int main()
 		}
 
 		std::map<float, int> hitList;
-		for (auto& pair : npcList)
+		for (const auto& pair : npcList)
 		{
 			if (pair.first == elem.first)
 			{
@@ -181,16 +194,13 @@ int main()
 
 			float distance = sqrt(pow(targetNpc.pt.x - fromNpc.pt.x, 2) + pow(targetNpc.pt.y - fromNpc.pt.y, 2));
 			Point dir((toNpc.pt.x - fromNpc.pt.x) /distance, (toNpc.pt.y - fromNpc.pt.y) / distance) ;
-			Point ray = fromNpc.pt;
-			ray.x = ray.x + dir.x * 1000;
-			ray.y = ray.y + dir.y * 1000;
-			bool checked = CheckLine(fromNpc.pt, ray, targetNpc.pt, targetNpc.radius);
 
-			if (checked && distance > 0.f)
+			int checked = CheckLine(fromNpc.pt, dir, targetNpc.pt, targetNpc.radius);
+			if (checked >= 2 && distance > 0.f)
 			{
 				hitList.insert({ distance, pair.first });
 			}
-		}	
+		}
 
 		if (hitList.empty() == false)
 		{

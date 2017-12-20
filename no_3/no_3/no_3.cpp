@@ -28,12 +28,64 @@
 
 using namespace std;
 
+enum eDIR {
+    INVALID = 0,
+    EAST,
+    SOUTH,
+    WEST,
+    NORTH,
+};
+
+constexpr std::pair<int, int> EAST_DIR = {1, 0};
+constexpr std::pair<int, int> WEST_DIR = {-1, 0};
+constexpr std::pair<int, int> SOUTH_DIR = {0, -1};
+constexpr std::pair<int, int> NORTH_DIR = {0, 1};
+const std::vector<pair<int, int>> DIRS = {EAST_DIR, WEST_DIR, SOUTH_DIR, NORTH_DIR};
+
 struct Node
 {
-	int x = 0;
-	int y = 0;
+    std::pair<int, int> pos = {-1, -1};
 	bool obstacle = false;
+    eDIR eDir = INVALID;
 };
+
+eDIR GetDirFromStr(const string& str)
+{
+    if (str.compare("EAST") == 0)
+    {
+        return EAST;
+    }
+    else if (str.compare("WEST") == 0)
+    {
+        return WEST;
+    }
+    else if (str.compare("SOUTH") == 0)
+    {
+        return SOUTH;
+    }
+    else if (str.compare("NORTH") == 0)
+    {
+        return NORTH;
+    }
+
+    return INVALID;
+}
+
+void SearchAround(const Node& goal,
+    std::queue<std::pair<int, int>>& openList,
+    std::queue<std::pair<int, int>>& closeList,
+    const std::map<std::pair<int, int>, Node>& mapData)
+{
+    const std::pair<int, int>& targetNode = openList.front();
+    openList.pop();
+
+    closeList.push(targetNode);
+}
+
+int CalcWeight()
+{
+    return 0;
+}
 
 string Solve(string D, int W, std::vector<string> MAP)
 {
@@ -46,27 +98,36 @@ string Solve(string D, int W, std::vector<string> MAP)
 		const string& str = MAP[y];
 		for (size_t x = 0; x < str.size(); x++)
 		{
-			const char* ch = &(str.at(0));
+            string ch;
+            char temp = str.at(x);
+            ch = temp;
 			Node node;
-			node.x = x;
-			node.y = y;
+            node.pos = {static_cast<int>(x), static_cast<int>(y)};
 
-			if (strcmp(ch, "T") == 0)
+			if (ch.compare("T") == 0)
 			{
+                node.eDir = GetDirFromStr(D);
 				player = node;
 			}
-			else if (strcmp(ch, "#") == 0)
+			else if (ch.compare("#") == 0)
 			{
 				node.obstacle = true;
 			}
-			else if (strcmp(ch, "G") == 0)
+			else if (ch.compare("G") == 0)
 			{
 				goal = node;
 			}
 
-			mapData.insert({ { x,y }, node });
+			mapData.insert({ { x, y }, node });
 		}
 	}
+
+    std::queue<std::pair<int, int>> openList;
+    openList.push(player.pos);
+
+    std::queue<std::pair<int, int>> closeList;
+
+    SearchAround(goal, openList, closeList, mapData);
 
 	return "";
 }
