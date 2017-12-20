@@ -28,68 +28,208 @@
 
 using namespace std;
 
-enum eDIR {
+enum class eDIR {
     INVALID = 0,
     EAST,
-    SOUTH,
+	SOUTH, 
     WEST,
-    NORTH,
+	NORTH,
 };
 
-constexpr std::pair<int, int> EAST_DIR = {1, 0};
-constexpr std::pair<int, int> WEST_DIR = {-1, 0};
-constexpr std::pair<int, int> SOUTH_DIR = {0, -1};
-constexpr std::pair<int, int> NORTH_DIR = {0, 1};
-const std::vector<pair<int, int>> DIRS = {EAST_DIR, WEST_DIR, SOUTH_DIR, NORTH_DIR};
+using Position = std::pair<int, int>;
+
+constexpr Position INVALID_POSITION = { -1, -1 };
+constexpr Position EAST_DIR = {1, 0};
+constexpr Position WEST_DIR = {-1, 0};
+constexpr Position NORTH_DIR = {0, -1};
+constexpr Position SOUTH_DIR = {0, 1};
+const std::vector<Position> DIRS = {EAST_DIR, WEST_DIR, NORTH_DIR, SOUTH_DIR};
+
+enum class eMOVE
+{
+	INVALID = 0,
+	FORWARD,
+	LEFT,
+	RIGHT,
+};
+
+const char* GetMoveStr(eMOVE mode)
+{
+	switch (mode)
+	{
+	case eMOVE::INVALID:
+		return " ";
+	case eMOVE::FORWARD:
+		return "F";
+	case eMOVE::LEFT:
+		return "L";
+	case eMOVE::RIGHT:
+		return "R";
+	default:
+		break;
+	}
+
+	return "X";
+}
 
 struct Node
 {
-    std::pair<int, int> pos = {-1, -1};
+	Position pos = INVALID_POSITION;
 	bool obstacle = false;
-    eDIR eDir = INVALID;
+    eDIR eDir = eDIR::INVALID;
+	Position parentPos = INVALID_POSITION;
+	float weight = 0.f;
+	std::vector<eMOVE> moveCmd;
+
+	bool operator<(const Node& rhs) const {
+		return weight > rhs.weight;
+	}
 };
 
-eDIR GetDirFromStr(const string& str)
+eDIR GetDirByStr(const string& str)
 {
     if (str.compare("EAST") == 0)
     {
-        return EAST;
+        return eDIR::EAST;
     }
     else if (str.compare("WEST") == 0)
     {
-        return WEST;
-    }
-    else if (str.compare("SOUTH") == 0)
-    {
-        return SOUTH;
+        return eDIR::WEST;
     }
     else if (str.compare("NORTH") == 0)
     {
-        return NORTH;
+        return eDIR::NORTH;
+    }
+    else if (str.compare("SOUTH") == 0)
+    {
+        return eDIR::SOUTH;
     }
 
-    return INVALID;
+    return eDIR::INVALID;
 }
 
-void SearchAround(const Node& goal,
-    std::queue<std::pair<int, int>>& openList,
-    std::queue<std::pair<int, int>>& closeList,
-    const std::map<std::pair<int, int>, Node>& mapData)
+eDIR GetDirByPosition(const Position& pos)
 {
-    const std::pair<int, int>& targetNode = openList.front();
-    openList.pop();
+	if (pos == EAST_DIR)
+		return eDIR::EAST;
+	else if (pos == WEST_DIR)
+		return eDIR::WEST;
+	else if (pos == NORTH_DIR)
+		return eDIR::NORTH;
+	else if (pos == SOUTH_DIR)
+		return eDIR::SOUTH;
 
-    closeList.push(targetNode);
+	return eDIR::INVALID;
 }
 
-int CalcWeight()
+float CalcDistanceWeight(const Node& neighborNode, const Node& goal)
 {
-    return 0;
+	return static_cast<float>(sqrt(pow(goal.pos.first - neighborNode.pos.first, 2)
+		+ pow(goal.pos.second - neighborNode.pos.second, 2)));
+}
+
+float CalcWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir)
+{
+	eDIR eNeighboDir = GetDirByPosition(neighborDir);
+	
+	const float WEIGHT_FORWARD = 2.f;
+
+	if (targetNode.eDir == eNeighboDir)
+	{
+		neighborNode.moveCmd.push_back(eMOVE::FORWARD);
+		return WEIGHT_FORWARD;
+	}
+
+	float rotateWeight = 0;
+	int rotateDelta = static_cast<int>(eNeighboDir) - static_cast<int>(targetNode.eDir);
+	if (rotateDelta < 0)
+	{
+		int convertDelta = -1 * rotateDelta;
+		rotateWeight = convertDelta + WEIGHT_FORWARD;
+		for (int i = 0; i < convertDelta; i++)
+		{
+			neighborNode.moveCmd.push_back(eMOVE::RIGHT);
+		}		
+		neighborNode.moveCmd.push_back(eMOVE::FORWARD);
+	}
+	else
+	{
+		rotateWeight = rotateDelta + WEIGHT_FORWARD;
+		for (int i = 0; i < rotateDelta; i++)
+		{
+			neighborNode.moveCmd.push_back(eMOVE::LEFT);
+		}
+		neighborNode.moveCmd.push_back(eMOVE::FORWARD);
+	}
+	
+	return rotateWeight;
+}
+
+bool SearchAround(Node& goal,
+    std::priority_queue<Node>& openList,
+    std::set<Position>& closeList,
+    std::map<Position, Node>& mapData)
+{
+	if (openList.empty())
+		return false;
+
+	Node targetNode = openList.top();
+	openList.pop();
+
+	closeList.insert(targetNode.pos);
+
+	for (const auto& dir : DIRS)
+	{
+		Position pos = Position(targetNode.pos.first + dir.first, targetNode.pos.second + dir.second);
+		auto it = closeList.find(pos);
+		if (it != closeList.end())
+		{
+			continue;
+		}
+
+		auto mapIt = mapData.find(pos);
+		if (mapIt == mapData.end())
+		{
+			continue;
+		}
+
+		Node& neighborNode = mapIt->second;
+		if (neighborNode.obstacle == true)
+		{
+			closeList.insert(neighborNode.pos);
+			continue;
+		}
+
+		neighborNode.weight = CalcWeight(targetNode, neighborNode, dir);
+		neighborNode.weight += CalcDistanceWeight(neighborNode, goal);
+		neighborNode.parentPos = targetNode.pos;
+		neighborNode.eDir = GetDirByPosition(dir);
+
+		openList.push(neighborNode);
+
+		if (neighborNode.pos == goal.pos)
+		{
+			goal.parentPos = targetNode.pos;
+			return true;
+		}
+	}    
+
+	return SearchAround(goal, openList, closeList, mapData);
+}
+
+void MakePath(const Node& node, const std::map<Position, Node>& mapData, std::list<Position>& path)
+{
+	auto it = mapData.find(node.parentPos);
+	if (it != mapData.end())
+	{
+		path.push_front(node.parentPos);
+		MakePath(it->second, mapData, path);
+	}
 }
 
 string Solve(string D, int W, std::vector<string> MAP)
 {
-	std::map<std::pair<int, int>, Node> mapData;
+	std::map<Position, Node> mapData;
 	Node player;
 	Node goal;
 
@@ -106,7 +246,7 @@ string Solve(string D, int W, std::vector<string> MAP)
 
 			if (ch.compare("T") == 0)
 			{
-                node.eDir = GetDirFromStr(D);
+                node.eDir = GetDirByStr(D);
 				player = node;
 			}
 			else if (ch.compare("#") == 0)
@@ -122,14 +262,32 @@ string Solve(string D, int W, std::vector<string> MAP)
 		}
 	}
 
-    std::queue<std::pair<int, int>> openList;
-    openList.push(player.pos);
+    std::priority_queue<Node, std::vector<Node>> openList;
+	openList.push(player);
 
-    std::queue<std::pair<int, int>> closeList;
+    std::set<Position> closeList;
 
-    SearchAround(goal, openList, closeList, mapData);
+	std::list<Position> path;
+    bool find = SearchAround(goal, openList, closeList, mapData);
+	if (find)
+	{
+		MakePath(goal, mapData, path);
+	}
 
-	return "";
+	std::string outPathStr;
+	for (const auto& pos : path)
+	{
+		auto it = mapData.find(pos);
+		if (it == mapData.end())
+			continue;
+
+		for (const auto& cmd : it->second.moveCmd)
+		{
+			outPathStr.append(GetMoveStr(cmd));
+		}
+	}
+
+	return outPathStr;
 }
 
 int main()
