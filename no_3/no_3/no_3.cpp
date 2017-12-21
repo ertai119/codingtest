@@ -225,7 +225,7 @@ bool PathGenerator::SearchAround(Node& goal
 		if (neighborNode.pos == goal.pos)
 		{
 			goal.parentPos = targetNode.pos;
-			goal.eDir = targetNode.eDir;
+			goal.eDir = GetDirByPosition(dir);
 			return true;
 		}
 	}

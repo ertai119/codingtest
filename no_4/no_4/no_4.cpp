@@ -133,6 +133,9 @@ int main()
 			continue;
 		}
 
+		float shootDistance = sqrt(pow(toNpc.pt.x - fromNpc.pt.x, 2) + pow(toNpc.pt.y - fromNpc.pt.y, 2));
+		Point dir((toNpc.pt.x - fromNpc.pt.x) / shootDistance, (toNpc.pt.y - fromNpc.pt.y) / shootDistance);
+
 		std::map<float, int> hitList;
 
 		for (const auto& pair : npcList)
@@ -149,10 +152,9 @@ int main()
 			}
 
 			float distance = sqrt(pow(targetNpc.pt.x - fromNpc.pt.x, 2) + pow(targetNpc.pt.y - fromNpc.pt.y, 2));
-			Point dir((toNpc.pt.x - fromNpc.pt.x) /distance, (toNpc.pt.y - fromNpc.pt.y) / distance) ;
 
 			int checked = CheckLine(fromNpc.pt, dir, targetNpc.pt, targetNpc.radius);
-			if (checked >= 2 && distance > 0.f)
+			if (checked >= 1)
 			{
 				hitList.insert({ distance, pair.first });
 			}
@@ -160,12 +162,19 @@ int main()
 
 		if (hitList.empty() == false)
 		{
+			int deadCount = 0;
 			int hitCount = 0;
 			for (auto it = hitList.cbegin() ; it != hitList.cend(); ++it)
 			{
-				if (hitCount >= max_hit_count)
-				{
+				if (hitCount >= max_hit_count + deadCount)
+				{ 
 					break;
+				}
+
+				if (npcList[it->second].dead == true)
+				{
+					deadCount++;
+					continue;
 				}
 
 				npcList[it->second].dead = true;
@@ -179,3 +188,4 @@ int main()
 }
 
 
+     
