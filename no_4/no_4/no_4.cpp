@@ -94,7 +94,6 @@ int main()
 	int max_hit_count = 4;
 
 	std::map<int, Npc> npcList;
-/*
 	cin >> totalNpc;
 	for (int i = 0 ; i < totalNpc ; i++)
 	{
@@ -112,41 +111,9 @@ int main()
 		npc.radius = radius;
 		npcList.insert({ id, npc });
 	}
-	*/
-	npcList = {
-		{ 0, Npc(Point(12.f, 12.f), 12.f)},
-		{ 1, Npc(Point(19.f, 46.f), 19.f)},
-		{ 2, Npc(Point(37.f, 10.f), 10.f) },
-		{ 3, Npc(Point(49.f, 89.f), 22.f) },
-		{ 4, Npc(Point(57.f, 40.f), 17.f) },
-		{ 5, Npc(Point(96.f, 42.f), 19.f) },
-		{ 6, Npc(Point(132.f, 15.f), 15.f) },
-		{ 7, Npc(Point(169.f, 20.f), 20.f) },
-		{ 8, Npc(Point(60.f, 10.f), 10.f) },
-		{ 9, Npc(Point(168.f, 61.f), 19.f) },
-		{ 10, Npc(Point(92.f, 82.f), 19.f) },
-		{ 11, Npc(Point(130.f, 55.f), 13.f) },
-		{ 12, Npc(Point(130.f, 86.f), 16.f) },
-		{ 13, Npc(Point(83.f, 10.f), 10.f) },
-		{ 14, Npc(Point(168.f, 102.f), 20.f) },
-		{ 15, Npc(Point(87.f, 118.f), 14.f) },
-		{ 16, Npc(Point(120.f, 120.f), 16.f) },
-		{ 17, Npc(Point(122.f, 156.f), 18.f) },
-		{ 18, Npc(Point(10.f, 186.f), 10.f) },
-		{ 19, Npc(Point(18.f, 153.f), 18.f) },
-		{ 20, Npc(Point(164.f, 160.f), 22.f) },
-		{ 21, Npc(Point(59.f, 155.f), 20.f) }
-	};
-
-	/*
-	npcList = {
-		{ 0, Npc(Point(12.f, 12.f), 12.f) },
-		{ 1, Npc(Point(50.f, 50.f), 10.f) },
-		{ 2, Npc(Point(80.f, 80.f), 10.f) }
-	};*/
 
 	std::vector< std::pair<int, int> > shootHistory;
-	/*cin >> shootingCount;
+	cin >> shootingCount;
 	for (int i = 0; i < shootingCount; i++)
 	{
 		int from;
@@ -155,18 +122,6 @@ int main()
 		cin >> to;
 		shootHistory.push_back({ from, to});
 	}
-	*/
-	shootHistory.push_back({ 1,13 });
-	shootHistory.push_back({ 3,4 });
-	shootHistory.push_back({ 4,2 });
-	shootHistory.push_back({ 6,13 });
-	shootHistory.push_back({ 8,3 });
-	shootHistory.push_back({ 9,8 });
-	shootHistory.push_back({ 11,4 });
-	shootHistory.push_back({ 13,6 });
-	shootHistory.push_back({ 21,9 });
-
-	//shootHistory.push_back({ 0, 2});
 
 	for (const auto& elem : shootHistory)
 	{
@@ -179,6 +134,7 @@ int main()
 		}
 
 		std::map<float, int> hitList;
+
 		for (const auto& pair : npcList)
 		{
 			if (pair.first == elem.first)
@@ -219,8 +175,6 @@ int main()
 		}
 	}
 
-	// output
-	// 4 13 8 2 0 11 5 15 16 12 9
     return 0;
 }
 
