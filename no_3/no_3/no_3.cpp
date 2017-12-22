@@ -215,7 +215,6 @@ bool PathGenerator::SearchAround(Node& goal
 			continue;
 		}
 
-<<<<<<< HEAD
         auto openIt = openList.find(neighborNode.pos);
         if (openIt != openList.end())
         {
@@ -230,12 +229,6 @@ bool PathGenerator::SearchAround(Node& goal
         neighborNode.rotateWeight = calcRotateWieght;
         neighborNode.parentPos = targetNode.pos;
         neighborNode.eDir = GetDirByPosition(dir);
-=======
-		neighborNode.weight = CalcWeight(targetNode, neighborNode, dir);
-		neighborNode.weight += CalcDistanceWeight(neighborNode, goal);
-		neighborNode.parentPos = targetNode.pos;
-		neighborNode.eDir = GetDirByPosition(dir);
->>>>>>> parent of add0448... #00
 
         openList.insert({neighborNode.pos, neighborNode});
 
