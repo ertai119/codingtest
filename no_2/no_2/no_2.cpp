@@ -29,34 +29,50 @@
 
 using namespace std;
 
+unsigned long long DivideValue(unsigned long long left, unsigned long long value, int step)
+{
+    unsigned long long left2 = left / 2;
+    unsigned long long right2 = left2 + left % 2;
+    
+    step++;
+    if (step >= 30 || left < 1000)
+    {
+		unsigned long long retValue = (unsigned long long)pow(value, left);
+        return retValue;
+    }
+
+    unsigned long long leftRet = DivideValue(left2, value, step);
+    unsigned long long rightRet = DivideValue(right2, value, step);
+
+    return leftRet * rightRet;
+}
+
 int main() {
+
 
 	unsigned long long a = 85;
     unsigned long long b = 97;
     unsigned long long t = 1234567891234567890;
-	
 	/*
-	unsigned long long a = 2;
-	unsigned long long b = 3;
-	unsigned long long t = 20;
+	std::cin >> a;
+	std::cin >> b;
+	std::cin >> t;
 	*/
+    unsigned long long left = t / 2;
+    unsigned long long right = left + t % 2;
+    
+    int step = 0;
+    unsigned long long value1 = DivideValue(left, b, step);
+    unsigned long long value2 = DivideValue(right, b, step);
+
+    unsigned long long totalValue = value1 * value2;
 
 	unsigned long long divideValue = (unsigned long long)pow(10, 9) + 7;
+	unsigned long long tempResult = a * totalValue;
+	unsigned long long divide = (unsigned long long)(tempResult / divideValue);
+	unsigned long long tempValue = divide * divideValue;
+	unsigned long long result = tempResult - tempValue;
 
-	unsigned long long exp = t;
-	unsigned long long result = 1;
-	unsigned long long x = (b) % divideValue;
-	while (exp > 0)
-	{
-		if (exp % 2 == 1)
-		{
-			result = (result * x) % divideValue;
-		}
-		x = (x * x) % divideValue;
-		exp = exp / 2;
-	}
-
-	result = (result * a) % divideValue;
 	std::cout << result;
 
 	return 0;
