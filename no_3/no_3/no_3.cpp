@@ -118,11 +118,12 @@ public:
 		bool obstacle = false;
 		eDIR eDir = eDIR::INVALID;
 		Position parentPos = INVALID_POSITION;
-		float weight = 0.f;
+		float distWeight = 0.f;
+		float rotateWeight = 0.f;
 		std::vector<eMOVE> moveCmd;
 
 		bool operator<(const Node& rhs) const {
-			return weight > rhs.weight;
+			return distWeight + rotateWeight > rhs.distWeight + rhs.rotateWeight;
 		}
 	};
 
@@ -139,7 +140,7 @@ private:
 	Node _goal;
 
 	float CalcDistanceWeight(const Node& neighborNode, const Node& goal) const;
-	float CalcWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const;
+	float CalcRotateWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const;
 	bool SearchAround(Node& goal,
 		std::priority_queue<Node>& openList,
 		std::set<Position>& closeList,
@@ -153,7 +154,7 @@ float PathGenerator::CalcDistanceWeight(const Node& neighborNode, const Node& go
 		+ pow(goal.pos.second - neighborNode.pos.second, 2)));
 }
 
-float PathGenerator::CalcWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const
+float PathGenerator::CalcRotateWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const
 {
 	eDIR eNeighboDir = GetDirByPosition(neighborDir);
 
@@ -215,10 +216,30 @@ bool PathGenerator::SearchAround(Node& goal
 			continue;
 		}
 
-		neighborNode.weight = CalcWeight(targetNode, neighborNode, dir);
-		neighborNode.weight += CalcDistanceWeight(neighborNode, goal);
-		neighborNode.parentPos = targetNode.pos;
-		neighborNode.eDir = GetDirByPosition(dir);
+		int rotateWeight = CalcRotateWeight(targetNode, neighborNode, dir);
+		int distWeight = CalcDistanceWeight(neighborNode, goal);
+		int calcRotateWieght = neighborNode.rotateWeight + rotateWeight + targetNode.rotateWeight;
+
+		//neighborNode.rotateWeight += rotateWeight;
+		neighborNode.distWeight = distWeight;
+		if (neighborNode.rotateWeight == 0)
+		{
+			neighborNode.rotateWeight = calcRotateWieght;
+			neighborNode.parentPos = targetNode.pos;
+			neighborNode.eDir = GetDirByPosition(dir);
+		}
+		else
+		{
+			if (neighborNode.rotateWeight < calcRotateWieght)
+			{
+			}
+			else
+			{
+				neighborNode.rotateWeight += calcRotateWieght;
+				neighborNode.parentPos = targetNode.pos;
+				neighborNode.eDir = GetDirByPosition(dir);
+			}			
+		}
 
 		openList.push(neighborNode);
 
