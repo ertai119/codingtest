@@ -29,21 +29,21 @@
 using namespace std;
 
 enum class eDIR {
-    INVALID = 0,
-    EAST,
+	INVALID = 0,
+	EAST,
 	NORTH,
-    WEST,
-	SOUTH, 
+	WEST,
+	SOUTH,
 };
 
 using Position = std::pair<int, int>;
 
 constexpr Position INVALID_POSITION = { -1, -1 };
-constexpr Position EAST_DIR = {1, 0};
-constexpr Position WEST_DIR = {-1, 0};
-constexpr Position NORTH_DIR = {0, -1};
-constexpr Position SOUTH_DIR = {0, 1};
-const std::vector<Position> DIRS = {EAST_DIR, WEST_DIR, NORTH_DIR, SOUTH_DIR};
+constexpr Position EAST_DIR = { 1, 0 };
+constexpr Position WEST_DIR = { -1, 0 };
+constexpr Position NORTH_DIR = { 0, -1 };
+constexpr Position SOUTH_DIR = { 0, 1 };
+const std::vector<Position> DIRS = { EAST_DIR, WEST_DIR, NORTH_DIR, SOUTH_DIR };
 
 enum class eMOVE
 {
@@ -69,29 +69,29 @@ const char* GetMoveStr(eMOVE mode)
 		break;
 	}
 
-	return "X";
+	return "F";
 }
 
 eDIR GetDirByStr(const string& str)
 {
-    if (str.compare("EAST") == 0)
-    {
-        return eDIR::EAST;
-    }
-    else if (str.compare("WEST") == 0)
-    {
-        return eDIR::WEST;
-    }
-    else if (str.compare("NORTH") == 0)
-    {
-        return eDIR::NORTH;
-    }
-    else if (str.compare("SOUTH") == 0)
-    {
-        return eDIR::SOUTH;
-    }
+	if (str.compare("EAST") == 0)
+	{
+		return eDIR::EAST;
+	}
+	else if (str.compare("WEST") == 0)
+	{
+		return eDIR::WEST;
+	}
+	else if (str.compare("NORTH") == 0)
+	{
+		return eDIR::NORTH;
+	}
+	else if (str.compare("SOUTH") == 0)
+	{
+		return eDIR::SOUTH;
+	}
 
-    return eDIR::INVALID;
+	return eDIR::EAST;
 }
 
 eDIR GetDirByPosition(const Position& pos)
@@ -105,7 +105,7 @@ eDIR GetDirByPosition(const Position& pos)
 	else if (pos == SOUTH_DIR)
 		return eDIR::SOUTH;
 
-	return eDIR::INVALID;
+	return eDIR::EAST;
 }
 
 class PathGenerator
@@ -133,7 +133,7 @@ public:
 private:
 
 	std::map<Position, Node> _mapData;
-	std::priority_queue<Node, std::vector<Node>> _openList;
+	std::map<Position, Node> _openList;
 	std::set<Position> _closeList;
 	Node _player;
 	Node _goal;
@@ -141,7 +141,7 @@ private:
 	float CalcDistanceWeight(const Node& neighborNode, const Node& goal) const;
 	float CalcWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const;
 	bool SearchAround(Node& goal,
-		std::priority_queue<Node>& openList,
+		std::map<Position, Node>& openList,
 		std::set<Position>& closeList,
 		std::map<Position, Node>& mapData);
 	void RecordPath(const Node& node, std::list<Node>& record) const;
@@ -181,15 +181,28 @@ float PathGenerator::CalcWeight(const Node& targetNode, Node& neighborNode, cons
 }
 
 bool PathGenerator::SearchAround(Node& goal
-	, std::priority_queue<Node>& openList
+	, std::map<Position, Node>& openList
 	, std::set<Position>& closeList
 	, std::map<Position, Node>& mapData)
 {
 	if (openList.empty())
 		return false;
 
-	Node targetNode = openList.top();
-	openList.pop();
+	int minWeight = INT_MAX;
+	Position minWeightPos = INVALID_POSITION;
+	for (const auto& pair : openList)
+	{
+		if (minWeight > pair.second.weight)
+		{
+			minWeightPos = pair.first;
+		}
+	}
+
+	if (minWeightPos == INVALID_POSITION)
+		return false;
+
+	Node targetNode = openList[minWeightPos];
+	openList.erase(minWeightPos);
 
 	closeList.insert(targetNode.pos);
 
@@ -215,37 +228,32 @@ bool PathGenerator::SearchAround(Node& goal
 			continue;
 		}
 
-		int rotateWeight = CalcRotateWeight(targetNode, neighborNode, dir);
-		int distWeight = CalcDistanceWeight(neighborNode, goal);
-		int calcRotateWieght = neighborNode.rotateWeight + rotateWeight + targetNode.rotateWeight;
+		int weight = CalcWeight(targetNode, neighborNode, dir);
+		weight += CalcDistanceWeight(neighborNode, goal);
 
-		//neighborNode.rotateWeight += rotateWeight;
-		neighborNode.distWeight = distWeight;
-		if (neighborNode.rotateWeight == 0)
+		auto openIt = openList.find(neighborNode.pos);
+		if (openIt != openList.end())
 		{
-			neighborNode.rotateWeight = calcRotateWieght;
-			neighborNode.parentPos = targetNode.pos;
-			neighborNode.eDir = GetDirByPosition(dir);
+			if (openIt->second.weight > weight)
+			{
+				openIt->second.parentPos = targetNode.pos;
+				openIt->second.eDir = GetDirByPosition(dir);
+				openIt->second.weight = weight;
+			}
 		}
 		else
 		{
-			if (neighborNode.rotateWeight < calcRotateWieght)
-			{
-			}
-			else
-			{
-				neighborNode.rotateWeight += calcRotateWieght;
-				neighborNode.parentPos = targetNode.pos;
-				neighborNode.eDir = GetDirByPosition(dir);
-			}			
-		}
+			neighborNode.weight = weight;
+			neighborNode.parentPos = targetNode.pos;
+			neighborNode.eDir = GetDirByPosition(dir);
 
-		openList.push(neighborNode);
+			openList.insert({ neighborNode.pos, neighborNode });
+		}		
 
 		if (neighborNode.pos == goal.pos)
 		{
 			goal.parentPos = targetNode.pos;
-			goal.eDir = GetDirByPosition(dir);
+			//goal.eDir = GetDirByPosition(dir);
 			return true;
 		}
 	}
@@ -255,8 +263,8 @@ bool PathGenerator::SearchAround(Node& goal
 
 bool PathGenerator::Generator()
 {
-	_openList = std::priority_queue<Node, std::vector<Node>>();
-	_openList.push(_player);
+	_openList = std::map<Position, Node>();
+	_openList.insert({ _player.pos, _player });
 
 	_closeList.clear();
 
@@ -309,7 +317,7 @@ void PathGenerator::RecordPath(const Node& node, std::list<Node>& record) const
 	{
 		record.push_front(node);
 		RecordPath(it->second, record);
-	}	
+	}
 }
 
 void PathGenerator::MakeResult(std::string& pathStr)
@@ -351,21 +359,22 @@ void PathGenerator::MakeResult(std::string& pathStr)
 	return;
 }
 
-string Solve(string D, int W, std::vector<string> MAP)
-{
+string Solve(string D, int W, vector < string > MAP) {
+
 	PathGenerator pathGen;
 
 	bool load = pathGen.MakeMap(D, W, MAP);
 	bool find = false;
-	
+
 	if (load)
 		find = pathGen.Generator();
 
 	string pathStr;
 	if (find)
 		pathGen.MakeResult(pathStr);
-	
+
 	return pathStr;
+
 }
 
 int main()
