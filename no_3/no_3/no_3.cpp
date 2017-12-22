@@ -118,12 +118,11 @@ public:
 		bool obstacle = false;
 		eDIR eDir = eDIR::INVALID;
 		Position parentPos = INVALID_POSITION;
-		float distWeight = 0.f;
-		float rotateWeight = 0.f;
+		float weight = 0.f;
 		std::vector<eMOVE> moveCmd;
 
 		bool operator<(const Node& rhs) const {
-			return distWeight + rotateWeight > rhs.distWeight + rhs.rotateWeight;
+			return weight > rhs.weight;
 		}
 	};
 
@@ -140,7 +139,7 @@ private:
 	Node _goal;
 
 	float CalcDistanceWeight(const Node& neighborNode, const Node& goal) const;
-	float CalcRotateWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const;
+	float CalcWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const;
 	bool SearchAround(Node& goal,
         std::map<Position, Node>& openList,
 		std::set<Position>& closeList,
@@ -154,7 +153,7 @@ float PathGenerator::CalcDistanceWeight(const Node& neighborNode, const Node& go
 		+ pow(goal.pos.second - neighborNode.pos.second, 2)));
 }
 
-float PathGenerator::CalcRotateWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const
+float PathGenerator::CalcWeight(const Node& targetNode, Node& neighborNode, const Position& neighborDir) const
 {
 	eDIR eNeighboDir = GetDirByPosition(neighborDir);
 
@@ -216,6 +215,7 @@ bool PathGenerator::SearchAround(Node& goal
 			continue;
 		}
 
+<<<<<<< HEAD
         auto openIt = openList.find(neighborNode.pos);
         if (openIt != openList.end())
         {
@@ -230,6 +230,12 @@ bool PathGenerator::SearchAround(Node& goal
         neighborNode.rotateWeight = calcRotateWieght;
         neighborNode.parentPos = targetNode.pos;
         neighborNode.eDir = GetDirByPosition(dir);
+=======
+		neighborNode.weight = CalcWeight(targetNode, neighborNode, dir);
+		neighborNode.weight += CalcDistanceWeight(neighborNode, goal);
+		neighborNode.parentPos = targetNode.pos;
+		neighborNode.eDir = GetDirByPosition(dir);
+>>>>>>> parent of add0448... #00
 
         openList.insert({neighborNode.pos, neighborNode});
 
