@@ -439,6 +439,20 @@ namespace FMD
 			return static_cast<int>(OutputIterator - OutputIteratorStartPosition);
 		}
 
+        template <typename DestBufferType>
+        static bool WriteCodepointToBuffer(const unsigned int Codepoint, DestBufferType& Dest, int& DestLen)
+        {
+            int WrittenChars = Utf8FromCodepoint(Codepoint, Dest, DestLen);
+            if (WrittenChars < 1)
+            {
+                return false;
+            }
+            
+            Dest += WrittenChars;
+            DestLen -= WrittenChars;
+            return true;            
+        }
+        
 		template <typename DestBufferType>
 		static void Convert_Impl(DestBufferType& Dest, int DestLen, const wchar_t* Source, const int SourceLen)
 		{
@@ -514,28 +528,14 @@ namespace FMD
 			return Dest.GetCount();
 		}
 
-		template <typename DestBufferType>
-		static bool WriteCodepointToBuffer(const unsigned int Codepoint, DestBufferType& Dest, int& DestLen)
-		{
-			int WrittenChars = Utf8FromCodepoint(Codepoint, Dest, DestLen);
-			if (WrittenChars < 1)
-			{
-				return false;
-			}
-
-			Dest += WrittenChars;
-			DestLen -= WrittenChars;
-			return true;
-
-		}
 		const std::string Generate(const std::wstring& wstr)
 		{
 			std::string temp;
 
-			int SourceLen = wstr.length();
+			int SourceLen = static_cast<int>(wstr.length());
 			int StringLength = UNICODE_TO_UTF8::ConvertedLength(wstr.c_str(), SourceLen);
 
-			int32 BufferSize = StringLength + 1;
+			int BufferSize = StringLength + 1;
 
 			char* newTemp = new char[BufferSize];
 			
